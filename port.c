@@ -19,21 +19,19 @@
  */
 
 /* Compiler definitions include file. */
-#include "avr_compiler.h"
 #include "FreeRTOSConfig.h"
 /* Scheduler include files. */
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "TC_driver.h"
-#include "pmic_driver.h"
+#include <avr/interrupt.h>
 
 /*-----------------------------------------------------------
  * Implementation of functions defined in portable.h for the AVR XMEGA port.
  *----------------------------------------------------------*/
 
 /* Start tasks with interrupts enables. */
-#define portFLAGS_INT_ENABLED                    ( ( portSTACK_TYPE ) 0x80 )
+#define portFLAGS_INT_ENABLED                    ( ( StackType_t ) 0x80 )
 
 /*-----------------------------------------------------------*/
 
@@ -44,20 +42,20 @@ extern volatile tskTCB * volatile pxCurrentTCB;
 
 /*-----------------------------------------------------------*/
 
-/* 
+/*
  * Macro to save all the general purpose registers, the save the stack pointer
- * into the TCB.  
- * 
- * The first thing we do is save the flags then disable interrupts.  This is to 
- * guard our stack against having a context switch interrupt after we have already 
- * pushed the registers onto the stack - causing the 32 registers to be on the 
- * stack twice. 
- * 
+ * into the TCB.
+ *
+ * The first thing we do is save the flags then disable interrupts.  This is to
+ * guard our stack against having a context switch interrupt after we have already
+ * pushed the registers onto the stack - causing the 32 registers to be on the
+ * stack twice.
+ *
  * r1 is set to zero as the compiler expects it to be thus, however some
- * of the math routines make use of R1. 
- * 
+ * of the math routines make use of R1.
+ *
  * The interrupts will have been disabled during the call to portSAVE_CONTEXT()
- * so we need not worry about reading/writing to the stack pointer. 
+ * so we need not worry about reading/writing to the stack pointer.
  */
 
 #define portSAVE_CONTEXT()                                   \
@@ -105,9 +103,9 @@ extern volatile tskTCB * volatile pxCurrentTCB;
                     "st        x+, r0               \n\t"    \
                 );
 
-/* 
+/*
  * Opposite to portSAVE_CONTEXT().  Interrupts will have been disabled during
- * the context save so we can write to the stack pointer. 
+ * the context save so we can write to the stack pointer.
  */
 #define portRESTORE_CONTEXT()                                \
     asm volatile (  "lds    r26, pxCurrentTCB        \n\t"    \
@@ -160,10 +158,11 @@ extern volatile tskTCB * volatile pxCurrentTCB;
 static void prvSetupTimerInterrupt(void);
 /*-----------------------------------------------------------*/
 
-/* 
- * See header file for description. 
- */portSTACK_TYPE *pxPortInitialiseStack(portSTACK_TYPE *pxTopOfStack,
-        pdTASK_CODE pxCode, void *pvParameters) {
+/*
+ * See header file for description.
+ */
+StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode,
+        void *pvParameters) {
     /*The addresses are 16 or 24 bit depending on the xmega memory, so use 32 bit variable but put only a
      * part to stack.*/
     uint16_t usAddress;
@@ -183,10 +182,10 @@ static void prvSetupTimerInterrupt(void);
     /*    Original code
      * For 16-bit program counter (128K program memory or less)
      usAddress = ( unsigned short ) pxCode;
-     *pxTopOfStack = ( portSTACK_TYPE ) ( usAddress & ( unsigned short ) 0x00ff );
+     *pxTopOfStack = ( StackType_t ) ( usAddress & ( unsigned short ) 0x00ff );
      pxTopOfStack--;
      usAddress >>= 8;
-     *pxTopOfStack = ( portSTACK_TYPE ) ( usAddress & ( unsigned short ) 0x00ff );
+     *pxTopOfStack = ( StackType_t ) ( usAddress & ( unsigned short ) 0x00ff );
      pxTopOfStack--;*/
     /* end of original code block */
 
@@ -195,16 +194,16 @@ static void prvSetupTimerInterrupt(void);
      * used as temporary storage */
     usAddress = (uint16_t)pxCode;
 
-    *pxTopOfStack = (portSTACK_TYPE ) (usAddress & (uint16_t) 0x00ff);
+    *pxTopOfStack = (StackType_t ) (usAddress & (uint16_t) 0x00ff);
     pxTopOfStack--;
     usAddress >>= 8;
 
-    *pxTopOfStack = (portSTACK_TYPE ) (usAddress & (uint16_t) 0x00ff);
+    *pxTopOfStack = (StackType_t ) (usAddress & (uint16_t) 0x00ff);
     pxTopOfStack--;
 
 
 #if defined(__AVR_3_BYTE_PC__) && __AVR_3_BYTE_PC__
-    *pxTopOfStack = (portSTACK_TYPE ) 0;
+    *pxTopOfStack = (StackType_t ) 0;
     pxTopOfStack--;
 #endif
 
@@ -212,85 +211,85 @@ static void prvSetupTimerInterrupt(void);
      portSAVE_CONTEXT places the flags on the stack immediately after r0
      to ensure the interrupts get disabled as soon as possible, and so ensuring
      the stack use is minimal should a context switch interrupt occur. */
-    *pxTopOfStack = (portSTACK_TYPE ) 0x00; /* R0 */
+    *pxTopOfStack = (StackType_t ) 0x00; /* R0 */
     pxTopOfStack--;
     *pxTopOfStack = portFLAGS_INT_ENABLED;
     pxTopOfStack--;
 
     /* Now the remaining registers.   The compiler expects R1 to be 0. */
-    *pxTopOfStack = (portSTACK_TYPE ) 0x00; /* R1 */
+    *pxTopOfStack = (StackType_t ) 0x00; /* R1 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x02; /* R2 */
+    *pxTopOfStack = (StackType_t ) 0x02; /* R2 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x03; /* R3 */
+    *pxTopOfStack = (StackType_t ) 0x03; /* R3 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x04; /* R4 */
+    *pxTopOfStack = (StackType_t ) 0x04; /* R4 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x05; /* R5 */
+    *pxTopOfStack = (StackType_t ) 0x05; /* R5 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x06; /* R6 */
+    *pxTopOfStack = (StackType_t ) 0x06; /* R6 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x07; /* R7 */
+    *pxTopOfStack = (StackType_t ) 0x07; /* R7 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x08; /* R8 */
+    *pxTopOfStack = (StackType_t ) 0x08; /* R8 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x09; /* R9 */
+    *pxTopOfStack = (StackType_t ) 0x09; /* R9 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x10; /* R10 */
+    *pxTopOfStack = (StackType_t ) 0x10; /* R10 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x11; /* R11 */
+    *pxTopOfStack = (StackType_t ) 0x11; /* R11 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x12; /* R12 */
+    *pxTopOfStack = (StackType_t ) 0x12; /* R12 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x13; /* R13 */
+    *pxTopOfStack = (StackType_t ) 0x13; /* R13 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x14; /* R14 */
+    *pxTopOfStack = (StackType_t ) 0x14; /* R14 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x15; /* R15 */
+    *pxTopOfStack = (StackType_t ) 0x15; /* R15 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x16; /* R16 */
+    *pxTopOfStack = (StackType_t ) 0x16; /* R16 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x17; /* R17 */
+    *pxTopOfStack = (StackType_t ) 0x17; /* R17 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x18; /* R18 */
+    *pxTopOfStack = (StackType_t ) 0x18; /* R18 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x19; /* R19 */
+    *pxTopOfStack = (StackType_t ) 0x19; /* R19 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x20; /* R20 */
+    *pxTopOfStack = (StackType_t ) 0x20; /* R20 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x21; /* R21 */
+    *pxTopOfStack = (StackType_t ) 0x21; /* R21 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x22; /* R22 */
+    *pxTopOfStack = (StackType_t ) 0x22; /* R22 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x23; /* R23 */
+    *pxTopOfStack = (StackType_t ) 0x23; /* R23 */
     pxTopOfStack--;
 
     /* Place the parameter on the stack in the expected location. */
     usAddress = (unsigned short) pvParameters;
-    *pxTopOfStack = (portSTACK_TYPE ) (usAddress & (unsigned short) 0x00ff);
+    *pxTopOfStack = (StackType_t ) (usAddress & (unsigned short) 0x00ff);
     pxTopOfStack--;
 
     usAddress >>= 8;
-    *pxTopOfStack = (portSTACK_TYPE ) (usAddress & (unsigned short) 0x00ff);
+    *pxTopOfStack = (StackType_t ) (usAddress & (unsigned short) 0x00ff);
     pxTopOfStack--;
 
-    *pxTopOfStack = (portSTACK_TYPE ) 0x26; /* R26 X */
+    *pxTopOfStack = (StackType_t ) 0x26; /* R26 X */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x27; /* R27 */
+    *pxTopOfStack = (StackType_t ) 0x27; /* R27 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x28; /* R28 Y */
+    *pxTopOfStack = (StackType_t ) 0x28; /* R28 Y */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x29; /* R29 */
+    *pxTopOfStack = (StackType_t ) 0x29; /* R29 */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x30; /* R30 Z */
+    *pxTopOfStack = (StackType_t ) 0x30; /* R30 Z */
     pxTopOfStack--;
-    *pxTopOfStack = (portSTACK_TYPE ) 0x31; /* R31 */
+    *pxTopOfStack = (StackType_t ) 0x31; /* R31 */
     pxTopOfStack--;
 
     return pxTopOfStack;
 }
 /*-----------------------------------------------------------*/
-portBASE_TYPE xPortStartScheduler(void) {
+BaseType_t xPortStartScheduler(void) {
 
     /* Setup the hardware to generate the tick. */
     prvSetupTimerInterrupt();
@@ -337,14 +336,14 @@ static void prvSetupTimerInterrupt(void) {
     //Use TCC0 as a tick counter. If this is to be changed, change ISR as well
     TC0_t * tickTimer = &TCC0;
     //select the clock source and pre-scale by 64
-    TC0_ConfigClockSource(tickTimer, TC_CLKSEL_DIV64_gc);
+    tickTimer->CTRLA = (tickTimer->CTRLA & ~TC0_CLKSEL_gm) | TC_CLKSEL_DIV64_gc;
     //set period of counter
     tickTimer->PER = configCPU_CLOCK_HZ / configTICK_RATE_HZ / 64 - 1;
 
     //enable interrupt and set low level
-    TC0_SetOverflowIntLevel(tickTimer, TC_OVFINTLVL_LO_gc);
+    tickTimer->INTCTRLA = (tickTimer->INTCTRLA & ~TC1_OVFINTLVL_gm) | TC_OVFINTLVL_LO_gc;
     //enable low level interrupts
-    PMIC_EnableLowLevel();
+    PMIC.CTRL |= PMIC_LOLVLEX_bm;
 }
 /*-----------------------------------------------------------*/
 
@@ -356,7 +355,7 @@ static void prvSetupTimerInterrupt(void) {
  * count is incremented after the context is saved.
  */
 
-ISR (TCC0_OVF_vect, ISR_NAKED) {
+ISR(TCC0_OVF_vect, ISR_NAKED) {
     /*
      * Context switch function used by the tick.  This must be identical to
      * vPortYield() from the call to vTaskSwitchContext() onwards.  The only
@@ -364,7 +363,7 @@ ISR (TCC0_OVF_vect, ISR_NAKED) {
      * call comes from the tick ISR.
      */
     portSAVE_CONTEXT();
-    vTaskIncrementTick();
+    xTaskIncrementTick();
     vTaskSwitchContext();
     portRESTORE_CONTEXT();
     asm volatile ( "reti" );
@@ -379,7 +378,7 @@ ISR (TCC0_OVF_vect, ISR_NAKED) {
  */
 ISR (TCC0_OVF_vect, ISR_NAKED)
 {
-    vTaskIncrementTick();
+    xTaskIncrementTick();
 }
 #endif
 

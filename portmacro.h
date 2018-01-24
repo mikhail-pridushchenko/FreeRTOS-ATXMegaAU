@@ -20,13 +20,12 @@
 
 #ifndef PORTMACRO_H
 #define PORTMACRO_H
-#include "avr_compiler.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*-----------------------------------------------------------
- * Port specific definitions.  
+ * Port specific definitions.
  *
  * The settings in this file configure FreeRTOS correctly for the
  * given hardware and compiler.
@@ -41,9 +40,9 @@ extern "C" {
 #define portDOUBLE      double
 #define portLONG        long
 #define portSHORT       int
-//#define portSTACK_TYPE    unsigned portCHAR
 #define portSTACK_TYPE   uint_fast8_t
 #define portBASE_TYPE    char
+#define portPOINTER_SIZE_TYPE uint16_t
 
 #if( configUSE_16_BIT_TICKS == 1 )
     typedef unsigned portSHORT portTickType;
@@ -68,9 +67,9 @@ extern "C" {
 
 /* Architecture specifics. */
 #define portSTACK_GROWTH            ( -1 )
-#define portTICK_RATE_MS            ( ( portTickType ) 1000 / configTICK_RATE_HZ )
-#define portBYTE_ALIGNMENT            1
-#define portNOP()                    asm volatile ( "nop" );
+#define portTICK_PERIOD_MS          ( ( portTickType ) 1000 / configTICK_RATE_HZ )
+#define portBYTE_ALIGNMENT          1
+#define portNOP()                   asm volatile ( "nop" );
 /*-----------------------------------------------------------*/
 
 /* Kernel utilities. */
@@ -82,6 +81,10 @@ extern void vPortYield( void ) __attribute__ ( ( naked ) );
 #define portTASK_FUNCTION_PROTO( vFunction, pvParameters ) void vFunction( void *pvParameters )
 #define portTASK_FUNCTION( vFunction, pvParameters ) void vFunction( void *pvParameters )
 
+typedef portSTACK_TYPE StackType_t;
+typedef portBASE_TYPE BaseType_t;
+typedef unsigned portBASE_TYPE UBaseType_t;
+typedef portTickType TickType_t;
 #ifdef __cplusplus
 }
 #endif
