@@ -1,5 +1,9 @@
 /* This file has been prepared for Doxygen automatic documentation generation.*/
 /*
+ * Copyright (C) 2018 Mikhail Pridushchenko <mikhail.pridushchenko@gmail.com>
+ * 	ProdataKey, Inc
+ * 	10702 S 300 W  Suite 105
+ *
  * Copyright (C) 2012 Yuriy Kulikov
  *      Universitaet Erlangen-Nuernberg
  *      LS Informationstechnik (Kommunikationselektronik)
